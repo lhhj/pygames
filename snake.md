@@ -40,58 +40,180 @@ python snake_game.py
 
 ### Python Kode (forkortet)
 ```python
+# importerer biblioteker
 import pygame
 import time
 import random
 
+slange_hastighed = 15
+
+# Vinduesstørrelse
+vindue_x = 720
+vindue_y = 480
+
+# definerer farver
+sort = pygame.Color(0, 0, 0)
+hvid = pygame.Color(255, 255, 255)
+rød = pygame.Color(255, 0, 0)
+grøn = pygame.Color(0, 255, 0)
+blå = pygame.Color(0, 0, 255)
+
 # Initialiserer pygame
 pygame.init()
 
-# Farver
-hvid = (255, 255, 255)
-gul = (255, 255, 102)
-sort = (0, 0, 0)
+# Initialiserer spilvinduet
+pygame.display.set_caption('GeeksforGeeks Slange')
+spil_vindue = pygame.display.set_mode((vindue_x, vindue_y))
 
-# Skærmindstillinger
-skærmbredde = 800
-skærmhøjde = 600
-skærm = pygame.display.set_mode((skærmbredde, skærmhøjde))
+# FPS (frames per second) controller
+fps = pygame.time.Clock()
 
-# Slangeindstillinger
-slangeblok = 10
-slangehastighed = 15
+# definerer slangens standardposition
+slange_position = [100, 50]
 
-ur = pygame.time.Clock()
+# definerer de første 4 blokke af slangens krop
+slange_krop = [[100, 50],
+               [90, 50],
+               [80, 50],
+               [70, 50]
+              ]
 
-# Game loop funktion
-def gameLoop():
-    game_over = False
-    game_close = False
+# frugtens position
+frugt_position = [random.randrange(1, (vindue_x//10)) * 10, 
+                  random.randrange(1, (vindue_y//10)) * 10]
 
-    x1 = skærmbredde / 2
-    y1 = skærmhøjde / 2
+frugt_spawn = True
 
-    x1_ændring = 0
-    y1_ændring = 0
+# sætter slangens standardretning mod højre
+retning = 'HØJRE'
+ændring_til = retning
 
-    while not game_over:
-        while game_close:
-            # Vis Game Over skærm og mulighed for at spille igen
-            pass
+# startscore
+score = 0
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                game_over = True
+# funktion til at vise score
+def vis_score(valg, farve, skrifttype, størrelse):
+  
+    # opretter skrifttype-objekt score_font
+    score_font = pygame.font.SysFont(skrifttype, størrelse)
+    
+    # opretter overfladeobjektet score_surface
+    score_surface = score_font.render('Score : ' + str(score), True, farve)
+    
+    # opretter et rektangel-objekt til tekstoverfladen
+    score_rect = score_surface.get_rect()
+    
+    # viser teksten
+    spil_vindue.blit(score_surface, score_rect)
 
-        # Spilkontroller og bevægelse
-        pass
-
-        pygame.display.update()
-
+# funktion til spilslutning
+def spil_slut():
+  
+    # opretter skrifttype-objekt my_font
+    my_font = pygame.font.SysFont('times new roman', 50)
+    
+    # opretter en tekstoverflade, hvor teksten vil blive tegnet
+    spil_slut_surface = my_font.render(
+        'Din Score er : ' + str(score), True, rød)
+    
+    # opretter et rektangel-objekt til tekstoverfladen
+    spil_slut_rect = spil_slut_surface.get_rect()
+    
+    # indstiller positionen for teksten
+    spil_slut_rect.midtop = (vindue_x/2, vindue_y/4)
+    
+    # blit vil tegne teksten på skærmen
+    spil_vindue.blit(spil_slut_surface, spil_slut_rect)
+    pygame.display.flip()
+    
+    # efter 2 sekunder lukker vi programmet
+    time.sleep(2)
+    
+    # deaktiverer pygame biblioteket
     pygame.quit()
+    
+    # afslutter programmet
     quit()
 
-gameLoop()
+
+# Hovedfunktion
+while True:
+    
+    # håndtering af tastaturbegivenheder
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                ændring_til = 'OP'
+            if event.key == pygame.K_DOWN:
+                ændring_til = 'NED'
+            if event.key == pygame.K_LEFT:
+                ændring_til = 'VENSTRE'
+            if event.key == pygame.K_RIGHT:
+                ændring_til = 'HØJRE'
+
+    # Hvis to taster trykkes samtidigt, 
+    # vil vi ikke have, at slangen bevæger sig i to retninger samtidig
+    if ændring_til == 'OP' and retning != 'NED':
+        retning = 'OP'
+    if ændring_til == 'NED' and retning != 'OP':
+        retning = 'NED'
+    if ændring_til == 'VENSTRE' and retning != 'HØJRE':
+        retning = 'VENSTRE'
+    if ændring_til == 'HØJRE' and retning != 'VENSTRE':
+        retning = 'HØJRE'
+
+    # Bevægelse af slangen
+    if retning == 'OP':
+        slange_position[1] -= 10
+    if retning == 'NED':
+        slange_position[1] += 10
+    if retning == 'VENSTRE':
+        slange_position[0] -= 10
+    if retning == 'HØJRE':
+        slange_position[0] += 10
+
+    # Slangens vækstmekanisme
+    # Hvis frugten og slangen kolliderer, øges score med 10
+    slange_krop.insert(0, list(slange_position))
+    if slange_position[0] == frugt_position[0] and slange_position[1] == frugt_position[1]:
+        score += 10
+        frugt_spawn = False
+    else:
+        slange_krop.pop()
+        
+    if not frugt_spawn:
+        frugt_position = [random.randrange(1, (vindue_x//10)) * 10, 
+                          random.randrange(1, (vindue_y//10)) * 10]
+        
+    frugt_spawn = True
+    spil_vindue.fill(sort)
+    
+    for pos in slange_krop:
+        pygame.draw.rect(spil_vindue, grøn,
+                         pygame.Rect(pos[0], pos[1], 10, 10))
+    pygame.draw.rect(spil_vindue, hvid, pygame.Rect(
+        frugt_position[0], frugt_position[1], 10, 10))
+
+    # Game Over-betingelser
+    if slange_position[0] < 0 or slange_position[0] > vindue_x-10:
+        spil_slut()
+    if slange_position[1] < 0 or slange_position[1] > vindue_y-10:
+        spil_slut()
+
+    # Hvis slangen rører sin egen krop
+    for blok in slange_krop[1:]:
+        if slange_position[0] == blok[0] and slange_position[1] == blok[1]:
+            spil_slut()
+
+    # Viser scoren kontinuerligt
+    vis_score(1, hvid, 'times new roman', 20)
+
+    # Opdaterer spilskærmen
+    pygame.display.update()
+
+    # Frame Per Second (FPS) opdateringshastighed
+    fps.tick(slange_hastighed)
+
 ```
 
 ### Bidrag
